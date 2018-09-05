@@ -18,7 +18,12 @@ public class TestController {
 	}
 	
 	public void UrlParamsTest(JinContext c) {
-		String p = c.query("c");
+		String p = c.query("name");
+		c.json(200, "success test param:"+p);
+	}
+	
+	public void UrlStarParams(JinContext c) {
+		String p = c.query("action");
 		c.json(200, "success test param:"+p);
 	}
 	

@@ -54,7 +54,7 @@ public class HttpsSeverHandler extends ChannelInboundHandlerAdapter {
             
             FullHttpResponse httpResponse;
             String result = "";
-            JinMethod jm = https.getMethod(method,url.replaceFirst("/", ""));
+            JinMethod jm = https.getMethod(method,url.replaceFirst("/", ""),c);
             RunExec exec = new RunExec(c, jm);
             executor.schedule(exec, 1, TimeUnit.MILLISECONDS);
             httpResponse = exec.getResult();

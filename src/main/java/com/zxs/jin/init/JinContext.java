@@ -40,6 +40,10 @@ public class JinContext {
 		}
 	}
 	
+	public void addStarParams(Map<String, String> map) {
+		httpParams.putAll(map);
+	}
+	
 	public void json(int state,String result) {
 		this.state = state;
 		this.result = result;

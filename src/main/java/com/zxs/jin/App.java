@@ -29,7 +29,9 @@ public class App
         Https https = engine.group("v1/test");
         https.post("/test1", new JinMethod("com.zxs.jin.test.TestController", "PostTest"));
         https.get("/test1", new JinMethod("com.zxs.jin.test.TestController", "GetTest"));
-        https.post("/test2/${c}", new JinMethod("com.zxs.jin.test.TestController", "UrlParamsTest"));
+        https.post("/test2/:name", new JinMethod("com.zxs.jin.test.TestController", "UrlParamsTest"));
+        https.post("/test2/*action", new JinMethod("com.zxs.jin.test.TestController", "UrlStarParams"));
+        https.post("/test3/aa:name", new JinMethod("com.zxs.jin.test.TestController", "UrlParamsTest"));
         StartHttps.Start(engine);
     }
 }
