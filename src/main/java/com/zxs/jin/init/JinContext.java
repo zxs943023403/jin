@@ -10,6 +10,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.util.CharsetUtil;
+import io.netty.util.ReferenceCountUtil;
 
 public class JinContext {
 	private FullHttpRequest request;
@@ -18,6 +19,7 @@ public class JinContext {
 	private HttpHeaders headers;
 	private int state = 0;
 	private String result = "";
+	private String resultType = "";
 	private Map<String, String> httpParams;
 
 	public JinContext(FullHttpRequest request) {
@@ -25,10 +27,12 @@ public class JinContext {
 		headers = request.headers();
 		ByteBuf buf = request.content();
 		requestStr = buf.toString(CharsetUtil.UTF_8);
-		if ("application/json".equals(headers.get("Content-Type"))) {
+		try {
 			requestParams = (JSON) JSON.parse(requestStr);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		
+		ReferenceCountUtil.release(buf);
 		httpParams = new HashMap<String, String>();
 	}
 	
@@ -44,9 +48,20 @@ public class JinContext {
 		httpParams.putAll(map);
 	}
 	
-	public void json(int state,String result) {
+	public void json(int state,Object resultObj) {
+		this.state = state;
+		if (resultObj instanceof String) {
+			this.result = resultObj+"";
+		}else {
+			this.result = JSON.toJSONString(resultObj);
+		}
+		resultType = "application/json;charset=UTF-8";
+	}
+	
+	public void text(int state,String result) {
 		this.state = state;
 		this.result = result;
+		resultType = "text/html;charset=UTF-8";
 	}
 
 	public int getState() {
@@ -57,8 +72,12 @@ public class JinContext {
 		return result;
 	}
 	
+	public String getResultType() {
+		return resultType;
+	}
+	
 	public <T> T bind(T obj){
-		if (!"application/json".equals(headers.get("Content-Type"))) {
+		if (null == requestParams) {
 			return obj;
 		}
 		obj = (T) requestParams.toJavaObject(obj.getClass());

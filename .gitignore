@@ -2,3 +2,5 @@
 .classpath
 .settings
 /target
+/src/main/java/com/zxs/jin/RunTest.java
+/src/main/java/com/zxs/jin/util/HttpsUtil.java

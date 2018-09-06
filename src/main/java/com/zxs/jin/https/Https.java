@@ -37,7 +37,6 @@ public class Https {
 	}
 	
 	protected JinMethod getMethod(String url,JinContext c) {
-		System.out.println(url);
 		String[] urls = url.split("/");
 		url = "";
 //		for (int i = 1; i < urls.length; i++) {
