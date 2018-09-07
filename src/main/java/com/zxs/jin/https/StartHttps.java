@@ -1,5 +1,6 @@
 package com.zxs.jin.https;
 
+import com.zxs.jin.init.Controllers;
 import com.zxs.jin.init.NetConfig;
 import com.zxs.jin.util.Util;
 
@@ -19,6 +20,7 @@ public class StartHttps {
 	}
 	
 	public static void Start(HttpsEngine engine) {
+		Controllers.getInstance().initHttps(engine);
 		String portStr = config.getValue("jin.port");
 		if (!Util.isNumber(portStr)) {
 			throw new RuntimeException("端口号必须为整数!!");

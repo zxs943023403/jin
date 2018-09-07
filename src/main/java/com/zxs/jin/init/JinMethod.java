@@ -11,11 +11,18 @@ public class JinMethod {
 		this.methodName = methodName;
 	}
 	
+	public String getClassName() {
+		return className;
+	}
+
+	public String getMethodName() {
+		return methodName;
+	}
+
 	public void exec(JinContext c) {
 		try {
-			Class clazz = Class.forName(className);
-			Method m = clazz.getMethod(methodName, JinContext.class);
-			Object controller = clazz.newInstance();
+			Method m = Controllers.getMethod(className, methodName);
+			Object controller = Controllers.getController(className,methodName);
 			m.invoke(controller, c);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block

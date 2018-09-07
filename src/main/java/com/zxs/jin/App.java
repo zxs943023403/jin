@@ -33,5 +33,6 @@ public class App
         https.post("/test2/*action", new JinMethod("com.zxs.jin.test.TestController", "UrlStarParams"));
         https.post("/test3/aa:name", new JinMethod("com.zxs.jin.test.TestController", "UrlParamsTest"));
         StartHttps.Start(engine);
+        System.out.println("end");
     }
 }

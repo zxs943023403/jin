@@ -1,6 +1,8 @@
 package com.zxs.jin.https;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -35,7 +37,15 @@ public class Https {
 		}
 		rests.put(rest, methods);
 	}
-	
+	protected List<JinMethod> getMethods(){
+		List<JinMethod> ms = new ArrayList<JinMethod>();
+		for (Map<String, JinMethod> m1 : rests.values()) {
+			for (JinMethod m2 : m1.values()) {
+				ms.add(m2);
+			}
+		}
+		return ms;
+	}
 	protected JinMethod getMethod(String url,JinContext c) {
 		String[] urls = url.split("/");
 		url = "";

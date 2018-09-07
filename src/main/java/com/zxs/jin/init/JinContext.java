@@ -17,23 +17,37 @@ public class JinContext {
 	private JSON requestParams;
 	private String requestStr;
 	private HttpHeaders headers;
-	private int state = 0;
+	private int state = -1;
 	private String result = "";
 	private String resultType = "";
 	private Map<String, String> httpParams;
+	private boolean jsonDown = false;
 
 	public JinContext(FullHttpRequest request) {
 		this.request = request;
 		headers = request.headers();
 		ByteBuf buf = request.content();
 		requestStr = buf.toString(CharsetUtil.UTF_8);
-		try {
-			requestParams = (JSON) JSON.parse(requestStr);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 		ReferenceCountUtil.release(buf);
+		
+		new Thread(new requestIntoJson()).start();
+		
 		httpParams = new HashMap<String, String>();
+	}
+	
+	private class requestIntoJson implements Runnable {
+
+		@Override
+		public void run() {
+			// TODO Auto-generated method stub
+			try {
+				requestParams = (JSON) JSON.parse(requestStr);
+			} catch (Exception e) {
+				// TODO: handle exception
+			}
+			jsonDown = true;
+		}
+		
 	}
 	
 	public void addUrlParams(String urlParam) {
@@ -77,6 +91,14 @@ public class JinContext {
 	}
 	
 	public <T> T bind(T obj){
+		try {
+			while (!jsonDown) {
+				Thread.sleep(1);
+			}
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		if (null == requestParams) {
 			return obj;
 		}

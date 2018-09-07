@@ -27,6 +27,7 @@ import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.netty.handler.codec.http.multipart.MixedAttribute;
 import io.netty.util.CharsetUtil;
+import io.netty.util.internal.StringUtil;
 
 public class HttpsSeverHandler extends ChannelInboundHandlerAdapter {
 	
@@ -36,8 +37,8 @@ public class HttpsSeverHandler extends ChannelInboundHandlerAdapter {
 	
 	public HttpsSeverHandler(HttpsEngine https) {
 		this.https = https;
-		executor = Executors.newScheduledThreadPool(20);
-		requestExeecutor = Executors.newScheduledThreadPool(20);
+		executor = Executors.newScheduledThreadPool(100);
+		requestExeecutor = Executors.newScheduledThreadPool(100);
 	}
 	
 	@Override
@@ -75,27 +76,37 @@ public class HttpsSeverHandler extends ChannelInboundHandlerAdapter {
 	            
 	            FullHttpResponse httpResponse;
 	            String result = "";
-	            JinMethod jm = https.getMethod(method,url.replaceFirst("/", ""),c);
-	            RunExec exec = new RunExec(c, jm);
-	            executor.schedule(exec, 1, TimeUnit.MILLISECONDS);
-	            httpResponse = exec.getResult();
-	            result = c.getResult();
-	            PrintLog.log("<=== result:%s",result);
-	            httpResponse.content().writeBytes(result.getBytes());
-	            httpResponse.headers().set(HttpHeaderNames.CONTENT_TYPE, c.getResultType());
-	            httpResponse.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, httpResponse.content().readableBytes());
-	            if (keepaLive) {
-	                httpResponse.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
-	                ctx.writeAndFlush(httpResponse);
-	            } else {
-	                ctx.writeAndFlush(httpResponse).addListener(ChannelFutureListener.CLOSE);
-	            }
+	            https.before(c);
+	            if (c.getState() != -1 && !StringUtil.isNullOrEmpty(c.getResult())) {
+	            	httpResponse = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.valueOf(c.getState()));
+					sendResponse(httpResponse, c.getResult(), c, keepaLive, ctx);
+				}else {
+					JinMethod jm = https.getMethod(method,url.replaceFirst("/", ""),c);
+					RunExec exec = new RunExec(c, jm);
+					executor.schedule(exec, 1, TimeUnit.MILLISECONDS);
+					httpResponse = exec.getResult();
+					result = c.getResult();
+					PrintLog.log("<=== result:%s",result);
+					sendResponse(httpResponse, result, c, keepaLive, ctx);
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}finally {
 				ctx.close();
 			}
 		}
+	}
+	
+	private void sendResponse(FullHttpResponse response,String result,JinContext c,boolean keepaLive,ChannelHandlerContext ctx) {
+		response.content().writeBytes(result.getBytes());
+		response.headers().set(HttpHeaderNames.CONTENT_TYPE, c.getResultType());
+		response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes());
+		if (keepaLive) {
+			response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
+            ctx.writeAndFlush(response);
+        } else {
+            ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+        }
 	}
 	 
 	 private class RunExec implements Runnable {
@@ -120,7 +131,7 @@ public class HttpsSeverHandler extends ChannelInboundHandlerAdapter {
 				rc.json(404, "404 bad request");
 			}else {
 				method.exec(rc);
-				response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.valueOf(rc.getState() == 0?200:rc.getState()));
+				response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.valueOf(rc.getState() == -1?200:rc.getState()));
 			}
 			ok = true;
 		}

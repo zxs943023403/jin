@@ -1,17 +1,20 @@
 package com.zxs.jin.https;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+import com.zxs.jin.init.Engine;
 import com.zxs.jin.init.JinContext;
 import com.zxs.jin.init.JinMethod;
 
-public class HttpsEngine {
+public class HttpsEngine implements Engine {
 	private static ConcurrentHashMap<String, Https> groups;
 	private static HttpsEngine engine = new HttpsEngine();
+	private static List<JinMethod> before;
 	private HttpsEngine() {
 		groups = new ConcurrentHashMap<String, Https>();
+		before = new ArrayList<JinMethod>();
 	}
 	public static HttpsEngine NEW() {
 		return engine;
@@ -21,8 +24,8 @@ public class HttpsEngine {
 		groups.put(group, https);
 		return https;
 	}
-	public void Use() {
-		
+	public void Use(JinMethod method) {
+		before.add(method);
 	}
 	protected JinMethod getMethod(String rest,String url,JinContext c) {
 		String group = "";
@@ -41,22 +44,17 @@ public class HttpsEngine {
 		}
 		return todo;
 	}
-	
-	public static void main(String[] args) {
-		String url = "aadadccnhgdd";
-		String act = "aa*cc*dd";
-		String psHead = "(?<=";
-		String psTail = "(?=";
-		String[] acts = act.split("[*]");
-		for (int i = 0; i < acts.length - 1; i++) {
-			String ps = psHead + acts[i] + ")"+"(.+)" + psTail + acts[i+1] + ")";
-			Pattern p = Pattern.compile(ps);
-			Matcher m = p.matcher(url);
-			while (m.find()) {
-				System.out.println(m.group());
-			}
+	protected void before(JinContext c) {
+		for (JinMethod m : before) {
+			m.exec(c);
 		}
-//		System.out.println(url.replace(ps, ""));
 	}
-	
+	public List<JinMethod> getAllMethods(){
+		List<JinMethod> methods = new ArrayList<JinMethod>();
+		methods.addAll(before);
+		for (Https hs : groups.values()) {
+			methods.addAll(hs.getMethods());
+		}
+		return methods;
+	}
 }
